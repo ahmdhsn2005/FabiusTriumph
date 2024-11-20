@@ -7,93 +7,85 @@ public class PlayerMovement : MonoBehaviour
     public Animator playerAnim;
     public Rigidbody playerRigid;
     public float w_speed, wb_speed, run_speed, ro_speed;
-    private float olw_speed;  // original walking speed
+    private float olw_speed;
     public bool walking;
     public Transform playerTrans;
 
     void Start()
     {
-        // Store the original walking speed in olw_speed
         olw_speed = w_speed;
     }
 
     void FixedUpdate()
     {
-        // Move forward
+        Vector3 moveDirection = Vector3.zero;
+
         if (Input.GetKey(KeyCode.W))
         {
-            playerRigid.velocity = transform.forward * w_speed * Time.deltaTime;
+            moveDirection = transform.forward * w_speed;
         }
-        // Move backward
         else if (Input.GetKey(KeyCode.S))
         {
-            playerRigid.velocity = -transform.forward * wb_speed * Time.deltaTime;
+            moveDirection = -transform.forward * wb_speed;
         }
-        else
+
+        playerRigid.velocity = moveDirection * Time.deltaTime;
+
+        if (moveDirection == Vector3.zero)
         {
-            // Stop sliding by setting velocity to zero when no movement keys are pressed
             playerRigid.velocity = Vector3.zero;
         }
     }
 
     void Update()
     {
-        // Walking forward
-        if (Input.GetKeyDown(KeyCode.W))
+        if (Input.GetKey(KeyCode.W))
         {
-            playerAnim.SetTrigger("walk");
-            playerAnim.ResetTrigger("idle");
+            playerAnim.SetBool("walk", true);
+            playerAnim.SetBool("walkback", false);
+            playerAnim.SetBool("run", false);
+            playerAnim.SetBool("idle", false);
             walking = true;
         }
-        if (Input.GetKeyUp(KeyCode.W))
+        else if (Input.GetKey(KeyCode.S))
         {
-            playerAnim.ResetTrigger("walk");
-            playerAnim.SetTrigger("idle");
+            playerAnim.SetBool("walk", false);
+            playerAnim.SetBool("walkback", true);
+            playerAnim.SetBool("run", false);
+            playerAnim.SetBool("idle", false);
+            walking = true;
+        }
+        else
+        {
+            playerAnim.SetBool("walk", false);
+            playerAnim.SetBool("walkback", false);
+            playerAnim.SetBool("run", false);
+            playerAnim.SetBool("idle", true);
             walking = false;
         }
 
-        // Walking backward
-        if (Input.GetKeyDown(KeyCode.S))
+        if (walking && Input.GetKey(KeyCode.LeftShift))
         {
-            playerAnim.SetTrigger("walkback");
-            playerAnim.ResetTrigger("idle");
-            walking = true;
+            w_speed = olw_speed + run_speed;
+            playerAnim.SetBool("run", true);
+            playerAnim.SetBool("walk", false);
         }
-        if (Input.GetKeyUp(KeyCode.S))
+        else if (walking)
         {
-            playerAnim.ResetTrigger("walkback");
-            playerAnim.SetTrigger("idle");
-            walking = false;
+            w_speed = olw_speed;
+            playerAnim.SetBool("run", false);
+            playerAnim.SetBool("walk", true);
         }
 
-        // Rotating left
         if (Input.GetKey(KeyCode.A))
         {
             playerTrans.Rotate(0, -ro_speed * Time.deltaTime, 0);
+            Debug.Log("Rotating Left: " + playerTrans.rotation.eulerAngles);
         }
-
-        // Rotating right
-        if (Input.GetKey(KeyCode.D))
+        else if (Input.GetKey(KeyCode.D))
         {
             playerTrans.Rotate(0, ro_speed * Time.deltaTime, 0);
-        }
-
-        // Running logic
-        if (walking)
-        {
-            if (Input.GetKeyDown(KeyCode.LeftShift))
-            {
-                w_speed = olw_speed + run_speed;  // Increase speed for sprint
-                playerAnim.SetTrigger("run");
-                playerAnim.ResetTrigger("walk");
-            }
-
-            if (Input.GetKeyUp(KeyCode.LeftShift))
-            {
-                w_speed = olw_speed;  // Reset to normal walking speed
-                playerAnim.ResetTrigger("run");
-                playerAnim.SetTrigger("walk");
-            }
+            Debug.Log("Rotating Right: " + playerTrans.rotation.eulerAngles);
         }
     }
 }
